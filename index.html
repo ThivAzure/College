@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Alternatives: Top Tier Indian Institutes Beyond JEE</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals (Stone/Sand) with Terracotta and Sage Accents -->
+    <!-- Application Structure Plan: The SPA is structured into a Dashboard layout. 1. Introduction & Context setting. 2. An Interactive Discovery Engine where users adjust sliders (weighting their priorities like Campus Life vs Research) to dynamically rank institutions. 3. Detailed Analytics section featuring Canvas-based charts (Radar for specific profile, Scatter for comparison) to dive deeper into the data without leaving the page. This structure is chosen because "fit" is highly subjective; allowing the user to manipulate weights based on their specific priorities (e.g., someone prioritizing startups over pure research) is the most effective way to consume this multi-dimensional data. -->
+    <!-- Visualization & Content Choices: 
+         - Goal: Inform/Rank -> Viz: Dynamic List Cards -> Interaction: Sliders change order -> Justification: Immediate visual feedback on how priorities shift rankings. -> Library: Vanilla JS + Tailwind.
+         - Goal: Analyze Profile -> Viz: Radar Chart -> Interaction: Click on a card updates chart -> Justification: Perfect for showing multi-dimensional strengths of a single entity. -> Library: Chart.js Canvas.
+         - Goal: Compare -> Viz: Bubble/Scatter Chart -> Interaction: Hover for tooltips -> Justification: Maps institutions on dual axes (e.g., Campus Life vs Academics) to identify clusters and outliers. -> Library: Chart.js Canvas.
+         Confirming NO SVG/Mermaid used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf9f6; /* Off-white warm neutral */
+            color: #292524; /* Stone 800 */
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f5f4; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+
+        input[type=range] {
+            accent-color: #c2410c; /* Terracotta accent */
+        }
+        
+        .card-active {
+            border-color: #c2410c;
+            box-shadow: 0 4px 6px -1px rgba(194, 65, 12, 0.1), 0 2px 4px -1px rgba(194, 65, 12, 0.06);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-orange-200 selection:text-orange-900 overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="bg-stone-900 text-stone-100 py-12 px-6 shadow-md border-b-4 border-orange-600">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">The Elite Alternatives</h1>
+            <p class="text-lg md:text-xl text-stone-300 max-w-3xl leading-relaxed">
+                Navigating India's top-tier higher education landscape beyond the traditional JEE ecosystem. This interactive report identifies institutions offering exceptional global credibility, placements, peer quality, and campus life—without requiring JEE, IIT, NIT, IIIT, or BITS admission pathways.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+
+        <!-- Section 1: Interactive Discovery -->
+        <section id="discovery" class="scroll-mt-10">
+            <div class="mb-8 border-b border-stone-300 pb-6">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">&#x1F50D; Interactive Match Engine</h2>
+                <p class="text-stone-600 max-w-4xl text-lg leading-relaxed">
+                    <strong>Purpose:</strong> Finding the right institution is highly subjective. This section allows you to define what matters most to you. By adjusting the weight of different criteria—from hardcore academic research to vibrant campus fests and startup culture—the engine dynamically recalculates and ranks the institutions that best align with your unique preferences.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Controls Sidebar -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-stone-200 h-fit sticky top-6">
+                    <h3 class="text-xl font-semibold mb-6 border-b border-stone-100 pb-2">Set Your Priorities</h3>
+                    <div id="sliders-container" class="space-y-5">
+                        <!-- Sliders generated by JS -->
+                    </div>
+                    <button id="reset-weights" class="mt-8 w-full py-2 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium rounded transition duration-200">
+                        Reset to Equal Weights
+                    </button>
+                </div>
+
+                <!-- Results Grid -->
+                <div class="lg:col-span-8">
+                    <div class="flex justify-between items-end mb-4 px-2">
+                        <h3 class="text-xl font-semibold">Top Matches for You</h3>
+                        <span id="match-count" class="text-sm font-medium text-orange-700 bg-orange-100 px-3 py-1 rounded-full">6 Institutions</span>
+                    </div>
+                    <div id="colleges-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Cards generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Deep Dive Analytics -->
+        <section id="analytics" class="scroll-mt-10 bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-stone-200">
+            <div class="mb-10 text-center max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">&#x1F4CA; Deep Dive Analytics</h2>
+                <p class="text-stone-600 text-lg leading-relaxed">
+                    <strong>Purpose:</strong> While the ranking engine provides a quick overview, true insight requires comparative analysis. This section visually maps the detailed profiles of these elite institutions. Select a college from the list above to view its multi-dimensional breakdown, or analyze the overall landscape to see how institutions cluster based on Campus Life versus Academic Rigor.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-12 items-start">
+                
+                <!-- Radar Chart Area -->
+                <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 flex flex-col items-center">
+                    <h3 class="text-xl font-semibold text-center mb-2 w-full" id="radar-title">Institution Profile</h3>
+                    <p class="text-sm text-stone-500 text-center mb-6 w-full">Select a college card above to view its 8-dimensional profile.</p>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bubble Chart Area -->
+                <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 flex flex-col items-center">
+                    <h3 class="text-xl font-semibold text-center mb-2 w-full">The Institutional Landscape</h3>
+                    <p class="text-sm text-stone-500 text-center mb-6 w-full">Mapping Academics & Research vs. Culture & Startups.</p>
+                    <div class="chart-container">
+                        <canvas id="bubbleChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 text-center mt-12">
+        <p class="text-sm">&copy; Interactive Information Architecture Report. Data modeled for comparative analysis.</p>
+    </footer>
+
+    <script>
+        // --- 1. Data Store ---
+        // Scoring is on a 1-10 scale based on relative strengths in the non-JEE landscape.
+        const criteriaConfig = {
+            degreeValue: { label: 'Degree Value (Global)', desc: 'Recognition by international grad schools & employers.' },
+            credibility: { label: 'Long-term Credibility', desc: 'Alumni network, historical prestige, and trust.' },
+            placements: { label: 'Placements & ROI', desc: 'Average packages and top-tier company recruitment.' },
+            campusLife: { label: 'Campus Life & Fun', desc: 'Infrastructure, hostel life, freedom, and recreation.' },
+            peerQuality: { label: 'Peer Quality', desc: 'Competitiveness, diversity, and intellect of the cohort.' },
+            startups: { label: 'Startup Culture', desc: 'Incubators, alumni founders, and entrepreneurial drive.' },
+            fests: { label: 'Fests & Hackathons', desc: 'Scale of cultural/tech events and coding competitions.' },
+            research: { label: 'Research & Academics', desc: 'Undergrad research opportunities, faculty quality.' }
+        };
+
+        const collegesData = [
+            {
+                id: 'isi',
+                name: 'Indian Statistical Institute (ISI)',
+                location: 'Kolkata/Bangalore/Delhi',
+                exam: 'ISI Admission Test',
+                summary: 'The pinnacle of quantitative sciences in India. Unmatched global credibility and research pedigree.',
+                stats: { degreeValue: 10, credibility: 10, placements: 10, campusLife: 5, peerQuality: 10, startups: 5, fests: 4, research: 10 }
+            },
+            {
+                id: 'cmi',
+                name: 'Chennai Mathematical Institute (CMI)',
+                location: 'Chennai',
+                exam: 'CMI Entrance Exam',
+                summary: 'Elite institute for CS, Math, and Data Science. Known for producing top-tier researchers and quants.',
+                stats: { degreeValue: 10, credibility: 9, placements: 9, campusLife: 5, peerQuality: 10, startups: 4, fests: 4, research: 10 }
+            },
+            {
+                id: 'manipal',
+                name: 'Manipal Institute of Tech (MIT)',
+                location: 'Manipal, Karnataka',
+                exam: 'MET (Manipal Entrance Test)',
+                summary: 'Unbeatable campus life and alumni network. A powerhouse for tech startups, hackathons, and global exposure.',
+                stats: { degreeValue: 7, credibility: 8, placements: 8, campusLife: 10, peerQuality: 7, startups: 9, fests: 10, research: 6 }
+            },
+            {
+                id: 'ashoka',
+                name: 'Ashoka University',
+                location: 'Sonipat, NCR',
+                exam: 'AAT (Ashoka Aptitude Test)',
+                summary: 'Premier interdisciplinary university. Stellar peer group, modern tech curriculum blended with liberal arts, and strong startup vibe.',
+                stats: { degreeValue: 9, credibility: 7, placements: 8, campusLife: 9, peerQuality: 9, startups: 8, fests: 8, research: 7 }
+            },
+            {
+                id: 'plaksha',
+                name: 'Plaksha University',
+                location: 'Mohali, Punjab',
+                exam: 'Tech Aptitude / Holistic',
+                summary: 'Backed by top tech entrepreneurs. Heavily focused on modern computing, AI, experiential learning, and launching startups.',
+                stats: { degreeValue: 8, credibility: 6, placements: 8, campusLife: 8, peerQuality: 8, startups: 10, fests: 7, research: 7 }
+            },
+            {
+                id: 'snu',
+                name: 'Shiv Nadar University (SNU)',
+                location: 'Greater Noida',
+                exam: 'SNUSAT',
+                summary: 'Research-focused multidisciplinary university with excellent infrastructure, strong faculty, and solid core placements.',
+                stats: { degreeValue: 7, credibility: 7, placements: 8, campusLife: 8, peerQuality: 7, startups: 6, fests: 7, research: 9 }
+            }
+        ];
+
+        // State Management
+        let userWeights = {};
+        Object.keys(criteriaConfig).forEach(key => userWeights[key] = 5); // Default weight is 5
+        let activeCollegeId = 'manipal'; // Default selection for charts
+        let chartInstances = { radar: null, bubble: null };
+
+        // --- 2. Initialization & DOM Elements ---
+        const slidersContainer = document.getElementById('sliders-container');
+        const gridContainer = document.getElementById('colleges-grid');
+        const resetBtn = document.getElementById('reset-weights');
+
+        function init() {
+            renderSliders();
+            updateRankings();
+            initCharts();
+            setupEventListeners();
+        }
+
+        // --- 3. UI Rendering Functions ---
+        function renderSliders() {
+            slidersContainer.innerHTML = '';
+            Object.entries(criteriaConfig).forEach(([key, config]) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col space-y-1';
+                wrapper.innerHTML = `
+                    <div class="flex justify-between items-center text-sm">
+                        <label for="slider-${key}" class="font-medium text-stone-700 cursor-help" title="${config.desc}">${config.label}</label>
+                        <span id="val-${key}" class="text-orange-700 font-bold bg-orange-50 px-2 py-0.5 rounded text-xs">5</span>
+                    </div>
+                    <input type="range" id="slider-${key}" data-key="${key}" min="0" max="10" value="5" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer">
+                `;
+                slidersContainer.appendChild(wrapper);
+            });
+        }
+
+        function calculateScores() {
+            return collegesData.map(college => {
+                let totalScore = 0;
+                let maxPossibleScore = 0;
+                
+                Object.keys(criteriaConfig).forEach(key => {
+                    const weight = userWeights[key];
+                    const stat = college.stats[key];
+                    totalScore += stat * weight;
+                    maxPossibleScore += 10 * weight; // 10 is max stat value
+                });
+
+                const normalizedScore = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+                return { ...college, matchScore: normalizedScore };
+            }).sort((a, b) => b.matchScore - a.matchScore);
+        }
+
+        function updateRankings() {
+            const rankedColleges = calculateScores();
+            gridContainer.innerHTML = '';
+
+            rankedColleges.forEach((college, index) => {
+                const isTop = index === 0;
+                const isActive = college.id === activeCollegeId;
+                
+                const card = document.createElement('div');
+                card.className = `bg-white p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-md ${isActive ? 'card-active' : 'border-stone-100 hover:border-stone-300'}`;
+                card.onclick = () => selectCollege(college.id);
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="text-lg font-bold text-stone-800">${college.name}</h4>
+                                ${isTop ? '<span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">Top Match</span>' : ''}
+                            </div>
+                            <span class="text-xs font-medium text-stone-500 uppercase tracking-wide">&#x1F4CD; ${college.location} &bull; Exam: ${college.exam}</span>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-2xl font-bold text-orange-600">${college.matchScore.toFixed(0)}%</span>
+                            <span class="text-[10px] text-stone-400 uppercase">Match</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-stone-600 mt-3 leading-relaxed border-t border-stone-100 pt-3">${college.summary}</p>
+                `;
+                gridContainer.appendChild(card);
+            });
+        }
+
+        function selectCollege(id) {
+            activeCollegeId = id;
+            updateRankings(); // Re-render to update active styling
+            updateRadarChart();
+            
+            // Scroll to analytics smoothly on mobile
+            if(window.innerWidth < 1024) {
+                document.getElementById('analytics').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // --- 4. Charting Logic (Chart.js) ---
+        function initCharts() {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#57534e'; // stone-600
+            
+            // 4A. Radar Chart
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            chartInstances.radar = new Chart(ctxRadar, {
+                type: 'radar',
+                data: getRadarData(activeCollegeId),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e7e5e4' },
+                            grid: { color: '#e7e5e4' },
+                            pointLabels: {
+                                font: { size: 11, weight: '600' },
+                                color: '#292524',
+                                // Label wrapping logic built-in to Chart.js by returning array
+                                callback: function(value) {
+                                    if(value.length > 15) {
+                                        let words = value.split(' ');
+                                        if(words.length > 1) return [words[0] + ' ' + words[1], words.slice(2).join(' ')];
+                                    }
+                                    return value;
+                                }
+                            },
+                            ticks: { display: false, min: 0, max: 10, stepSize: 2 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(41, 37, 36, 0.9)',
+                            padding: 12,
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => `Score: ${context.raw} / 10`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 4B. Bubble/Scatter Chart
+            // X-Axis: Culture, Fests & Startups Avg
+            // Y-Axis: Research, Credibility, Degree Value Avg
+            // R-Axis: Placements
+            const ctxBubble = document.getElementById('bubbleChart').getContext('2d');
+            const bubbleData = collegesData.map(c => {
+                const xVal = (c.stats.campusLife + c.stats.fests + c.stats.startups) / 3;
+                const yVal = (c.stats.research + c.stats.credibility + c.stats.degreeValue) / 3;
+                return {
+                    label: c.id,
+                    data: [{
+                        x: xVal,
+                        y: yVal,
+                        r: c.stats.placements * 2.5 // scale up radius for visibility
+                    }],
+                    backgroundColor: c.id === activeCollegeId ? 'rgba(194, 65, 12, 0.7)' : 'rgba(120, 113, 108, 0.4)',
+                    borderColor: c.id === activeCollegeId ? '#9a3412' : '#78716c',
+                    borderWidth: 2,
+                    name: c.name
+                };
+            });
+            chartInstances.bubble = new Chart(ctxBubble, {
+                type: 'bubble',
+                data: { datasets: bubbleData },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Culture & Startup Activity ➔', font: {weight: 'bold'} },
+                            min: 3, max: 11,
+                            grid: { color: '#f5f5f4' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Academics & Credibility ➔', font: {weight: 'bold'} },
+                            min: 5, max: 11,
+                            grid: { color: '#f5f5f4' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(41, 37, 36, 0.9)',
+                            callbacks: {
+                                label: (ctx) => {
+                                    const c = ctx.dataset;
+                                    return [
+                                        c.name,
+                                        `Culture: ${ctx.raw.x.toFixed(1)}/10`,
+                                        `Academics: ${ctx.raw.y.toFixed(1)}/10`,
+                                        `Placements: ${ctx.raw.r / 2.5}/10`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateRadarChart(); // Set initial title
+        }
+
+        function getRadarData(collegeId) {
+            const college = collegesData.find(c => c.id === collegeId);
+            const labels = Object.values(criteriaConfig).map(c => c.label);
+            const dataPoints = Object.keys(criteriaConfig).map(k => college.stats[k]);
+
+            return {
+                labels: labels,
+                datasets: [{
+                    label: college.name,
+                    data: dataPoints,
+                    backgroundColor: 'rgba(194, 65, 12, 0.2)',
+                    borderColor: '#c2410c',
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#c2410c',
+                    pointHoverBackgroundColor: '#c2410c',
+                    pointHoverBorderColor: '#fff',
+                    borderWidth: 2,
+                  }]
+            };
+        }
+
+        function updateRadarChart() {
+            if(!chartInstances.radar) return;
+            const college = collegesData.find(c => c.id === activeCollegeId);
+            document.getElementById('radar-title').innerText = `${college.name} Profile`;
+            
+            chartInstances.radar.data = getRadarData(activeCollegeId);
+            chartInstances.radar.update();
+
+            // Highlight in bubble chart
+            chartInstances.bubble.data.datasets.forEach(ds => {
+                if(ds.label === activeCollegeId) {
+                    ds.backgroundColor = 'rgba(194, 65, 12, 0.7)';
+                    ds.borderColor = '#9a3412';
+                } else {
+                    ds.backgroundColor = 'rgba(120, 113, 108, 0.4)';
+                    ds.borderColor = '#78716c';
+                }
+            });
+            chartInstances.bubble.update();
+        }
+
+        // --- 5. Event Listeners ---
+        function setupEventListeners() {
+            // Slider changes
+            slidersContainer.addEventListener('input', (e) => {
+                if(e.target.tagName === 'INPUT') {
+                    const key = e.target.getAttribute('data-key');
+                    const val = parseInt(e.target.value);
+                    userWeights[key] = val;
+                    document.getElementById(`val-${key}`).innerText = val;
+                    updateRankings();
+                }
+            });
+
+            // Reset button
+            resetBtn.addEventListener('click', () => {
+                Object.keys(criteriaConfig).forEach(key => {
+                    userWeights[key] = 5;
+                    const slider = document.getElementById(`slider-${key}`);
+                    if(slider) slider.value = 5;
+                    const valDisplay = document.getElementById(`val-${key}`);
+                    if(valDisplay) valDisplay.innerText = 5;
+                });
+                updateRankings();
+            });
+        }
+
+        // Boot
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
